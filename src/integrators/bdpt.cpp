@@ -128,7 +128,6 @@ public:
     Color3f f(const Vector3f& p, TransportMode mode) const
     {
         if( Type::ECamera == type ){
-            std::cout << "f. called on a camera vertex" << std::endl;
             return 1;}
         Vector3f toP = p - its.p;
         if(toP.squaredNorm() == 0) return 0.f;
@@ -170,7 +169,7 @@ public:
         else{
             // *this is a camera
             float unused;
-            if( Type::ECamera != type ) {std::cout << "Should be a camera but is not" << std::endl;}
+            if( Type::ECamera != type ) { throw NoriException("pdf() called on non-camera vertex without prev"); }
             scene.getCamera()->pdf(Ray3f(its.p, woWorld), unused, pdf);
         }
 
@@ -350,6 +349,15 @@ class BDPTIntegrator : public Integrator {
 
             // f includes both multiplication by the cosine term and division by the pdf
             beta *= f;
+
+//            // Russian roulette
+//            Removed as it brakes the assumption that pdfRev == pdfFwd
+//            if (depth > 3) {
+//                float rrProb = std::min(beta.maxCoeff(), 0.99f);
+//                if (sampler->next1D() > rrProb) break;
+//                beta /= rrProb;
+//                pdfFwd *= rrProb;
+//            }
 
             // Assuming that the pdf is the same for the reverse path
             pdfRev = pdfFwd;
@@ -795,10 +803,13 @@ class BDPTIntegrator : public Integrator {
                 }
             }
         };
+
         /* Determine the filename of the output bitmap */
         size_t lastslash = fileName.find_last_of("/");
         size_t lastdot = fileName.find_last_of(".");
         std::string name = fileName.substr(lastslash + 1, lastdot - lastslash - 1);
+        name += "_" + scene->getIntegrator()->getName() +
+                      "_" + std::to_string(scene->getSampler()->getSampleCount());
         std::string directory = fileName.substr(0, lastslash + 1) + "results/" + name;
         std::string directoryExr = directory + "/exr";
         std::string directoryPng = directory + "/png";
@@ -818,8 +829,6 @@ class BDPTIntegrator : public Integrator {
         saveExr(*combinedBitmap, "_combined");
         savePng(*combinedBitmap, "_combined");
 
-        std::string strategyExrPaths;
-        std::string strategyPngPaths;
         if(visualizeStrategies)
         {
             for(int i = 0; i < visualizationCount; i++)
@@ -827,49 +836,16 @@ class BDPTIntegrator : public Integrator {
                 std::unique_ptr<Bitmap> strategyBitmap(strategyImages[i]->toBitmap(invSampleCount));
                 saveExr(*strategyBitmap, "_" + strategyNames[i]);
                 savePng(*strategyBitmap, "_" + strategyNames[i]);
-//                strategyExrPaths += " " + directoryExr + "/" + name + "_strategy_" + std::to_string(i) + ".exr ";
-//                strategyPngPaths += " " + directoryPng + "/" + name + "_strategy_" + std::to_string(i) + ".png ";
-                strategyExrPaths += " " + directoryExr + "/" + name + + "_" + strategyNames[i] + ".exr";
-                strategyPngPaths += " " + directoryPng + "/" + name + "_" + strategyNames[i] + ".png ";
             }
         }
 
-        /* Generate pyramid picture */
-        std::string pyramidPath = directory + "/" + name + "_pyramid" + ".png ";
-        std::string command = "/home/dofri/epfl/advanced_computer_graphics/cs440-2024-Berathram/ext/pyramid/pyramid.py "
-                  +  strategyPngPaths
-                  + "--output " + pyramidPath;
-
-        if(visualizeStrategies)
-        {
-            int ret = system(command.c_str());
-            if( ret != 0 )
-            {
-                std::cerr << "Return " << std::endl;
-            }
-        }
-
-        /* Open exr files in tev.appimage */
-        command = "/home/dofri/epfl/advanced_computer_graphics/cs440-2024-Berathram/tev.appimage "
-                              + directoryExr + "/" + name + ".exr "
-                              + directoryExr + "/" + name + "_light.exr "
-                              + directoryExr + "/" + name + "_combined.exr "
-                              + (visualizeStrategies ?
-                                (strategyExrPaths + pyramidPath ) : "" )
-                              + "&";
-
-        int ret = system(command.c_str());
-        if( ret != 0 )
-        {
-            std::cerr << "Failed to open exr files in tev.appimage" << std::endl;
-        }
-
-        auto weights = strategyWeights.get();
-        for( int i = 0; i < visualizationCount; i++)
-        {
-            float avgWeight = weights[i].first / weights[i].second;
-            std::cout << "Strategy " << strategyNames[i] << " had an average weight of " << avgWeight << " over " << weights[i].second << " samples with a total weight of " << weights[i].first << std::endl;
-        }
+//        auto weights = strategyWeights.get();
+//        for( int i = 0; i < visualizationCount; i++)
+//        {
+//            float avgWeight = weights[i].first / weights[i].second;
+//            cout << "Strategy " << strategyNames[i] << ": avg weight = " << avgWeight
+//                 << " (" << weights[i].second << " samples)" << endl;
+//        }
 
     }
     public:
@@ -877,6 +853,10 @@ class BDPTIntegrator : public Integrator {
     }
     std::string toString() const {
         return "BDPTIntegrator[]";
+    }
+
+    std::string getName() const {
+        return "BDPT";
     }
 };
 

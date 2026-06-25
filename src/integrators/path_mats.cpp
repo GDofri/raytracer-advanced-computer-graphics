@@ -75,6 +75,10 @@ NORI_NAMESPACE_BEGIN
             return "MatsIntegrator[]";
         }
 
+
+        std::string getName() const {
+            return "MATS";
+        }
     };
 
     NORI_REGISTER_CLASS(MatsIntegrator, "path_mats")

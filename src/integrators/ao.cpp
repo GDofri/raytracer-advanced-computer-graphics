@@ -38,6 +38,10 @@ NORI_NAMESPACE_BEGIN
         std::string toString() const {
             return "AmbientOcclusionIntegrator[]";
         }
+
+        std::string getName() const {
+            return "AO";
+        }
     };
 
     NORI_REGISTER_CLASS(AmbientOcclusionIntegrator, "ao");

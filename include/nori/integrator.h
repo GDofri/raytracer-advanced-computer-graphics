@@ -41,6 +41,12 @@ public:
     /// Perform an (optional) preprocess step
     virtual void preprocess(const Scene *scene) const { };
 
+    /** Get the name of the integrator
+     *
+     * @return Name of the integrator
+     */
+    virtual std::string getName() const = 0;
+
     /**
      * \brief Return the type of object (i.e. Mesh/BSDF/etc.) 
      * provided by this instance

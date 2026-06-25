@@ -49,7 +49,6 @@ NORI_NAMESPACE_BEGIN
         }
     }
 
-//    static void render(Scene *scene, const std::string &filename) {
     void SampleIntegrator::render(const Scene *scene, const std::string &fileName, int threadCount, bool showGUI) const {
         const Camera *camera = scene->getCamera();
         Vector2i outputSize = camera->getOutputSize();
@@ -134,6 +133,8 @@ NORI_NAMESPACE_BEGIN
         size_t lastdot = outputName.find_last_of(".");
         if (lastdot != std::string::npos)
             outputName.erase(lastdot, std::string::npos);
+        outputName += "_" + scene->getIntegrator()->getName() +
+                      "_" + std::to_string(scene->getSampler()->getSampleCount());
 
         /* Save using the OpenEXR format */
         bitmap->saveEXR(outputName);
@@ -141,4 +142,4 @@ NORI_NAMESPACE_BEGIN
         /* Save tonemapped (sRGB) output using the PNG format */
         bitmap->savePNG(outputName);
     }
-};
+}

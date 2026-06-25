@@ -33,17 +33,20 @@ NORI_NAMESPACE_BEGIN
 
             // Light is not occluded
             Vector3f dirToLight = (lightPosition-its.p).normalized();
-            float incidentAngle = its.shFrame.n.dot(dirToLight);
+            float incidentCos = its.shFrame.n.dot(dirToLight);
             Vector3f vecToLight = its.p - lightPosition;
             float distToLightSquared = vecToLight.dot(vecToLight);
 
-            Color3f color = Color3f(1.0f) = lightEnergy*fmax(0.0f, incidentAngle)/(4*M_PI*M_PI * distToLightSquared);
+            Color3f color = Color3f(1.0f) = lightEnergy*fmax(0.0f, incidentCos)/(4*M_PI*M_PI * distToLightSquared);
             return color;
-
         }
 
         std::string toString() const {
             return "SimpleIntegrator[]";
+        }
+
+        std::string getName() const {
+            return "Simple";
         }
 
         private:

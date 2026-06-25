@@ -127,7 +127,8 @@ NORI_NAMESPACE_BEGIN
                 }
 
                 float distSquared = (its.p - ray.o).squaredNorm();
-                float cosI = its.shFrame.n.dot(its.toLocal(-ray.d));
+//                float cosI = its.shFrame.n.dot(its.toLocal(-ray.d));
+                float cosI = its.shFrame.n.dot(-ray.d);
                 if( its.mesh->isEmitter() && !lastWasSpecular)
                 {
                     float pdfEms = cosI > 0.0f ? scene->emitterSamplePdf() * its.mesh->getEmitter()->pdfPos({}) * distSquared / cosI : 0.0f;
@@ -152,6 +153,10 @@ NORI_NAMESPACE_BEGIN
 
         std::string toString() const override {
             return "MisIntigrator[]";
+        }
+
+        std::string getName() const {
+            return "MIS";
         }
 
     };

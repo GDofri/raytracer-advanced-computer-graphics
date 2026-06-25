@@ -35,7 +35,6 @@ NORI_NAMESPACE_BEGIN
 
             if( its.mesh->isEmitter() )
             {
-//                return totalRadiance;
                 // We sampled a point on an area light so we add its emittance
                 if (its.toLocal(-ray.d).z() > 0 )
                 {
@@ -96,6 +95,10 @@ NORI_NAMESPACE_BEGIN
             return "WhittedIntegrator[]";
         }
 
+
+        std::string getName() const {
+            return "Whitted";
+        }
     };
 
     NORI_REGISTER_CLASS(WhittedIntegrator, "whitted")

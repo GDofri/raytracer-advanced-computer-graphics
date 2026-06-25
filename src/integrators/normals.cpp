@@ -24,6 +24,10 @@ NORI_NAMESPACE_BEGIN
         std::string toString() const {
             return "NormalIntegrator[]";
         }
+
+        std::string getName() const {
+            return "Normals";
+        }
     };
 
     NORI_REGISTER_CLASS(NormalIntegrator, "normals");

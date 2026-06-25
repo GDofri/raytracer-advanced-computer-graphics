@@ -111,6 +111,9 @@ NORI_NAMESPACE_BEGIN
             return "EmsIntegrator[]";
         }
 
+        std::string getName() const {
+            return "EMS";
+        }
     };
 
     NORI_REGISTER_CLASS(EMSIntegrator, "path_ems")
