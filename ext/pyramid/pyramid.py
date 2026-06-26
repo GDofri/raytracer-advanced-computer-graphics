@@ -1,14 +1,48 @@
 #!/usr/bin/env python3
 
+import re
 import sys
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import math
 import argparse
 
 def load_images(image_paths):
     return [Image.open(path) for path in image_paths]
 
-def create_pyramid(images):
+def parse_st(path):
+    """Extract (s, t) from a filename like ..._sN_tM.png, or return None."""
+    m = re.search(r'_s(\d+)_t(\d+)', path)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+def _load_font(size):
+    for name in ["DejaVuSans.ttf", "DejaVuSansMono.ttf", "LiberationSans-Regular.ttf",
+                 "FreeSans.ttf", "Arial.ttf", "Helvetica.ttf"]:
+        try:
+            return ImageFont.truetype(name, size)
+        except (IOError, OSError):
+            pass
+    return ImageFont.load_default()
+
+def label_image(img, text):
+    """Return a copy of img with text stamped in the bottom-right corner."""
+    img = img.copy()
+    draw = ImageDraw.Draw(img)
+    font = _load_font(max(12, img.width // 10))
+    pad = 4
+    try:
+        bbox = draw.textbbox((0, 0), text, font=font)
+    except ValueError:
+        bbox = (0, 0, len(text) * 6, 11)
+    # Anchor the text so its actual bottom-right corner sits pad px from the image edge
+    tx = img.width  - bbox[2] - 2 * pad
+    ty = img.height - bbox[3] - 2 * pad
+    rect = [tx + bbox[0] - pad, ty + bbox[1] - pad,
+            tx + bbox[2] + pad, ty + bbox[3] + pad]
+    draw.rectangle(rect, fill=(0, 0, 0))
+    draw.text((tx, ty), text, fill=(255, 255, 255), font=font)
+    return img
+
+def create_pyramid(images, labels=None):
     # Determine the number of images
     n = len(images)
 
@@ -42,7 +76,10 @@ def create_pyramid(images):
             if img_index >= n:
                 break
             x = (total_width // 2) - (row * max_width // 2) + (col * max_width)
-            output_image.paste(images[img_index], (x, y))
+            img = images[img_index]
+            if labels and img_index < len(labels) and labels[img_index]:
+                img = label_image(img, labels[img_index])
+            output_image.paste(img, (x, y))
             img_index += 1
 
     return output_image
@@ -55,10 +92,18 @@ def main():
     parser = argparse.ArgumentParser(description="Create a pyramid of images.")
     parser.add_argument('image_paths', nargs='+', help="Paths to the input images.")
     parser.add_argument('--output', required=True, help="Path to the output image.")
+    parser.add_argument('--label', action='store_true',
+                        help="Stamp each image with its s/t strategy indices (parsed from filename).")
 
     args = parser.parse_args()
     images = load_images(args.image_paths)
-    output_image = create_pyramid(images)
+    labels = None
+    if args.label:
+        labels = []
+        for p in args.image_paths:
+            st = parse_st(p)
+            labels.append(f"s={st[0]} t={st[1]}" if st else None)
+    output_image = create_pyramid(images, labels=labels)
     save_image(output_image, args.output)
 
 if __name__ == "__main__":
